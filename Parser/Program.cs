@@ -17,6 +17,8 @@ yyyy-MM-dd HH:mm:ss
 Даты в параметрах задаются в формате dd.MM.yyyy
 */
 using System;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Runtime.Intrinsics.Arm;
 using static System.Net.Mime.MediaTypeNames;
 public class MyClass()
@@ -24,8 +26,8 @@ public class MyClass()
     public const string input = @"E:\test\IpParser\Connection_log.txt";
     public const string output = @"E:\test\IpParser\Output.txt";
 
-    public DateTime MaxDate = new(04,10,2024 );
-    public DateTime MinDate = new(01,01,1990);
+    public DateTime MaxDate = new(2024,04, 10);
+    public DateTime MinDate = new(1990,01, 01);
 
     public static void CreateSerchOutputFile()
     {
@@ -49,74 +51,69 @@ public class MyClass()
             Console.WriteLine(Ex.ToString());
         }
     }
-    public static DateTime UserInputValidator() 
+    static string GetTime(string prompt)
     {
-        while (true)
-        {
-            var input = Console.ReadLine();
+        string time;
+        bool isValid;
 
-            if (DateTime.TryParse(input, out DateTime num))
+        do
+        {
+            Console.Write(prompt);
+            time = Console.ReadLine();
+            isValid = DateTime.TryParseExact(time, "yyyy.MM.dd HH:mm:ss", null, System.Globalization.DateTimeStyles.None, out _);
+
+            if (!isValid)
             {
-                return num;
+                Console.WriteLine("Некорректный формат времени. Повторите ввод.");
             }
-        }
+
+        } while (!isValid);
+
+        return time;
     }
-    public static DateTime CheckIfUserInputIsDateTime() 
+    public static void StringValidator(string s, string startTime, string endTime)
     {
-         DateTime date = UserInputValidator(); 
-         return date;
-    }
-    public static bool StringValidator(string s)
-    {
-        DateTime date = new();
-       
         try
         {
-            date = DateTime.Parse(s);
-            return true;
+            int index = s.IndexOf(':');
+            string ip = s.Substring(0, index);
+            string timeString = s.Substring(index + 1);
+
+            DateTime time = DateTime.ParseExact(timeString, "yyyy.MM.dd HH:mm:ss", null);
+
+            DateTime startRange = DateTime.ParseExact(startTime, "yyyy.MM.dd HH:mm:ss", null);
+            DateTime endRange = DateTime.ParseExact(endTime, "yyyy.MM.dd HH:mm:ss", null);
+
+            if (time >= startRange && time <= endRange)
+            {
+                Console.WriteLine(ip);
+            }
         }
         catch (Exception Ex)
         {
             Console.WriteLine(Ex.ToString());
         }
-        return false;
     }
   
     static void Main()
     {
         if (File.Exists(input))
         {
-            using StreamReader file = new(input);
-            
-            Console.WriteLine("enter date to serch from");
-            DateTime FirstDate = CheckIfUserInputIsDateTime();
-            
-            Console.WriteLine("enter date to serch to");
-            DateTime LastDate = CheckIfUserInputIsDateTime();
+            using StreamReader reader = new(input);
 
-            Console.WriteLine(FirstDate);
-            Console.WriteLine(LastDate);
+            string startTime = GetTime("Enter date to serch from (yyyy.MM.dd HH:mm:ss): ");
+            string endTime = GetTime("Enter date to serch to (yyyy.MM.dd HH:mm:ss): ");
 
+            string line;
             
-            string ln;
-            
-            
-            //int result = DateTime.Compare(FirstDate, LastDate);
-
             CreateSerchOutputFile();
             using StreamWriter sw = File.CreateText(output);
 
-            while ((ln= file.ReadLine()) != null)
+            while ((line = reader.ReadLine()) != null)
             {
-                //trim
-
-                if (StringValidator(ln)) {
-                    Console.WriteLine(ln) ; 
-                }
+                StringValidator(line, startTime, endTime);
             }
-            file.Close();
-
-            //Console.WriteLine($"File has {counter} lines.");
+            reader.Close();
         }
         else Console.WriteLine("log file doesn't exist");
     }
