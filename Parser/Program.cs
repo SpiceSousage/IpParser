@@ -26,30 +26,25 @@ public class MyClass()
     public const string input = @"E:\test\IpParser\Connection_log.txt";
     public const string output = @"E:\test\IpParser\Output.txt";
 
-    public DateTime MaxDate = new(2024,04, 10);
+    public DateTime MaxDate = new(2024, 04, 10);
     public DateTime MinDate = new(1990,01, 01);
 
     public static void CreateSerchOutputFile()
     {
         FileInfo cfn = new(output);
-        using StreamReader file = new(input);
-
+        
         try
         {
             if (cfn.Exists) { cfn.Delete();}
 
             using FileStream fs = cfn.Create();
-
-            // Add some text to file
-            //Byte[] title = new UTF8Encoding(true).GetBytes("New Text File");
-            //fs.Write(title, 0, title.Length);
-            //byte[] author = new UTF8Encoding(true).GetBytes("Mahesh Chand");
-            //fs.Write(author, 0, author.Length);
+            fs.Close();
         }
         catch (Exception Ex)
         {
             Console.WriteLine(Ex.ToString());
         }
+        
     }
     static string GetTime(string prompt)
     {
@@ -64,14 +59,15 @@ public class MyClass()
 
             if (!isValid)
             {
-                Console.WriteLine("Некорректный формат времени. Повторите ввод.");
+                Console.Clear();   
+                Console.WriteLine("Wrong input, try again. input mask is - yyyy.MM.dd HH:mm:ss");
             }
 
         } while (!isValid);
 
         return time;
     }
-    public static void StringValidator(string s, string startTime, string endTime)
+    public static string StringValidator(string s, string startTime, string endTime)
     {
         try
         {
@@ -86,34 +82,40 @@ public class MyClass()
 
             if (time >= startRange && time <= endRange)
             {
-                Console.WriteLine(ip);
+                return(ip);
             }
         }
         catch (Exception Ex)
         {
-            Console.WriteLine(Ex.ToString());
+            Console.WriteLine($"wrong input {Ex.Message}");
         }
+        return null;
     }
   
+   
     static void Main()
     {
         if (File.Exists(input))
         {
-            using StreamReader reader = new(input);
-
-            string startTime = GetTime("Enter date to serch from (yyyy.MM.dd HH:mm:ss): ");
-            string endTime = GetTime("Enter date to serch to (yyyy.MM.dd HH:mm:ss): ");
-
-            string line;
-            
             CreateSerchOutputFile();
             using StreamWriter sw = File.CreateText(output);
+            sw.Close();
 
+            using StreamReader reader = new(input);
+            using StreamWriter writer = new(output);
+
+            string startTime =GetTime("Enter date to serch from (yyyy.MM.dd HH:mm:ss): ");
+            string endTime =GetTime("Enter date to serch to (yyyy.MM.dd HH:mm:ss): ");
+            string line;
+           
             while ((line = reader.ReadLine()) != null)
             {
-                StringValidator(line, startTime, endTime);
+                if (StringValidator(line, startTime, endTime) != null) 
+                {
+                    writer.WriteLine(StringValidator(line, startTime, endTime));
+                }
             }
-            reader.Close();
+            reader.Close();writer.Close();
         }
         else Console.WriteLine("log file doesn't exist");
     }
